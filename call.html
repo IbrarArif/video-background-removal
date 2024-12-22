@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Background Removal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .loading {
+            text-align: center;
+            display: none;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+        .success {
+            color: green;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Background Removal</h1>
+        <input type="file" id="inputVideo" accept="video/mp4" />
+        <button id="processButton">Process Video</button>
+        <div class="loading" id="loadingMessage">Processing... Please wait.</div>
+        <div class="error" id="errorMessage"></div>
+        <div class="success" id="successMessage"></div>
+    </div>
+
+    <script>
+        const processButton = document.getElementById("processButton");
+        const inputVideo = document.getElementById("inputVideo");
+        const loadingMessage = document.getElementById("loadingMessage");
+        const errorMessage = document.getElementById("errorMessage");
+        const successMessage = document.getElementById("successMessage");
+
+        // Function to handle file upload and API call
+        processButton.addEventListener("click", async () => {
+            if (inputVideo.files.length === 0) {
+                errorMessage.textContent = "Please select a video file.";
+                return;
+            }
+
+            errorMessage.textContent = "";
+            successMessage.textContent = "";
+            loadingMessage.style.display = "block";
+
+            const formData = new FormData();
+            formData.append("input_video", inputVideo.files[0]);
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/remove_background/", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const data = await response.blob();
+                    const url = URL.createObjectURL(data);
+                    successMessage.textContent = "Video processed successfully! Download the video below.";
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = url;
+                    downloadLink.download = "processed_video.mp4";
+                    downloadLink.textContent = "Download Processed Video";
+                    successMessage.appendChild(downloadLink);
+                } else {
+                    const errorData = await response.json();
+                    errorMessage.textContent = `Error: ${errorData.error}`;
+                }
+            } catch (error) {
+                errorMessage.textContent = `An error occurred: ${error.message}`;
+            } finally {
+                loadingMessage.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
